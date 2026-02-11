@@ -1,0 +1,79 @@
+results_saved_base_path: "./results"
+random_seed: 0
+
+InitModel:
+    saved_model_path: "./models"
+    device: "cpu"
+    load_pretrained: False
+    offline_training:
+        lr: 0.01
+        R: 1
+        batch_size: 64
+        num_epochs: 40
+        num_cls: 5
+
+OnlineLearning:
+    thread: 16
+    device: cpu 
+    domain: Ball
+    R: 2
+    S: 0.5
+    epsilon: 10 
+    if_warm_restart: True
+    coff_output: 5 
+    weights_tranc: 10
+    coff_meta_prob: 2
+    coff_eta_base: 4
+    ignore_num: 2 
+
+Logging:
+    logger_file: './debug.log'
+    logger_file_level: INFO
+
+Dataset:
+    name: MedQA 
+    raw_data_path: ./data
+    processed_data_path: ./processed_data
+
+Experiment:
+    method: Online #CP-conditional, CP-unconditional, Online
+    estimator_base: prompt_level_features 
+    kwargs:
+        reduced_dim: 24
+        quantile: 0.9
+        k: 1
+        num_time_steps: 2000
+        per_step_num: 1
+        seed: 0
+        num_trials: 5
+        num_log_steps: 10
+    shift:
+        type: LinearShift
+        shift_base_features: prompt_level_features
+        kwargs:
+            coefficient_start: 5
+            beta_start:
+                - 1.0
+                - 0.0
+                - 0.0
+                - 0.0
+                - 0.0
+                - 0.0
+                - 0.0
+                - 0.0
+                - 0.0
+            coefficient_end: 10
+            beta_end:
+                - 1.0
+                - 0.0
+                - 0.0
+                - 0.0
+                - 0.0
+                - 0.0
+                - 0.0
+                - 0.0
+                - 0.0
+
+Plot:
+    kwargs:
+        window_size: 50
