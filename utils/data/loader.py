@@ -6,6 +6,7 @@ import logging
 import pandas as pd
 from sentence_transformers import SentenceTransformer
 from tqdm import tqdm
+from utils.data.utils import sanity_check, fix_data
 
 
 def calculate_local_mean(feature, time_window_size=10):
@@ -294,6 +295,44 @@ class WikiDataset(BaseDataset):
         return z_arr
 
 
+class WildChatDataset(BaseDataset):
+
+    def __init__(self, raw_data_path, processed_data_path):
+        # dataset_name = "WildChat"
+        name = "WildChat"
+        super().__init__(os.path.join(raw_data_path, name), os.path.join(processed_data_path, name))
+
+
+        with open(os.path.join(self.processed_data_path, 'dataset.json')) as f:
+            dataset = json.load(f)
+        with open(os.path.join(self.processed_data_path, 'frequencies.pkl'), "rb") as f:
+            frequencies = pickle.load(f)
+        metadata = pd.read_csv(os.path.join(self.processed_data_path, "metadata.csv"))
+
+
+        sanity_check(dataset, frequencies, metadata)
+        dataset, frequencies, metadata = fix_data(dataset, frequencies, metadata)
+        sanity_check(dataset, frequencies, metadata)
+
+        annotations = [np.array([atom['is_supported'] for atom in dat['atomic_facts']]) for dat in dataset]
+
+        self.logger.info(f"Loaded processed data from {self.processed_data_path}")
+
+
+        self.logger.info(f"Sampled data size {len(dataset)}")
+        self.logger.info(f"Sampled frequencies size {len(frequencies)}")
+        self.logger.info(f"Sampled metadata size {len(metadata)}")
+
+        metadata['timestamp'] = pd.to_datetime(metadata['timestamp'])
+        time_indices = metadata['timestamp'].argsort()
+
+        self.dataset = [dataset[i] for i in time_indices]
+        self.metadata = metadata.iloc[time_indices, :]
+        self.prompt_level_features = np.concatenate([pd.get_dummies(self.metadata['model']).to_numpy(), pd.get_dummies(self.metadata['country']).to_numpy(), self.metadata['prompt_length'].to_numpy().reshape(-1, 1), self.metadata['response_length'].to_numpy().reshape(-1, 1)], axis=1)
+        self.frequencies_arr = [frequencies[i] for i in time_indices]
+        self.annotations_arr = [annotations[i] for i in time_indices]
+        self.embeddings = np.ones((len(self.metadata), 10))
+        return
 
 
 
@@ -302,6 +341,8 @@ def load_dataset(name, raw_data_path, processed_data_path, **kwargs):
         dataset = MedQADataset(raw_data_path, processed_data_path)
     elif name == "Wiki":
         dataset = WikiDataset(raw_data_path, processed_data_path)
+    elif name == "WildChat":
+        dataset = WildChatDataset(raw_data_path, processed_data_path)
     else:
         raise ValueError(f"No such dataset: {name}")
 

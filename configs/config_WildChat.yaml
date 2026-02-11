@@ -1,0 +1,57 @@
+# Config file for fixed covariate shift
+# Change T from 1000 to 4000
+results_saved_base_path: "./results"
+random_seed: 0
+
+InitModel:
+    saved_model_path: "./models"
+    device: "cpu"
+    load_pretrained: False
+    offline_training:
+        lr: 0.01
+        R: 1
+        batch_size: 64
+        num_epochs: 40
+        num_cls: 5
+
+OnlineLearning:
+    thread: 16
+    device: cpu 
+    domain: Ball
+    R: 2
+    S: 0.5 
+    epsilon: 10
+    if_warm_restart: True
+    coff_output: 1.5
+    weights_tranc: 10
+    coff_meta_prob: 2
+    coff_eta_base: 4
+    ignore_num: 2
+
+Logging:
+    logger_file: './debug.log'
+    logger_file_level: INFO
+
+Dataset:
+    name: WildChat
+    raw_data_path: ./data
+    processed_data_path: ./processed_data
+
+Experiment:
+    method: Online
+    estimator_base: prompt_level_features
+    method_specific_kwargs:
+        Online-oracle-noise-weights:
+            noise_mean: 20
+            noise_std: 10
+    kwargs:
+        train_frac: 0.5
+        quantile: 0.9
+        k: 5
+        per_step_num: 2
+        seed: 0
+        num_trials: 5
+
+Plot:
+    kwargs:
+        window_size: 25

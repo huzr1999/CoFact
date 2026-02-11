@@ -13,3 +13,11 @@ do
 		done
 	done
 done
+
+for dataset in WildChat
+do
+	for method in CP-unconditional CP-conditional Online
+	do
+		python main_wildchat.py --config configs/config_${dataset}.yaml --method ${method} 
+	done
+done
